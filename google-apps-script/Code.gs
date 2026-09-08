@@ -59,7 +59,10 @@ function installTriggers() {
   const p=props_();if(!p.getProperty('TELEGRAM_BOT_TOKEN')||!p.getProperty('TELEGRAM_CHAT_ID')) throw Error('TELEGRAM_NOT_CONFIGURED');
   book_();
   const installed=ScriptApp.getProjectTriggers();
-  for(const name of ['syncGmail','deliverNotifications']) if(!installed.some(t=>t.getHandlerFunction()===name)) ScriptApp.newTrigger(name).timeBased().everyMinutes(5).create();
+  if(!p.getProperty('NOTIFICATION_EMAIL')) throw Error('EMAIL_NOT_CONFIGURED');
+  for(const trigger of installed) if(trigger.getHandlerFunction()==='deliverNotifications') ScriptApp.deleteTrigger(trigger);
+  ScriptApp.newTrigger('deliverNotifications').timeBased().everyMinutes(1).create();
+  if(!installed.some(t=>t.getHandlerFunction()==='syncGmail')) ScriptApp.newTrigger('syncGmail').timeBased().everyMinutes(5).create();
   if(!installed.some(t=>t.getHandlerFunction()==='recordEdit')) ScriptApp.newTrigger('recordEdit').forSpreadsheet(p.getProperty('SPREADSHEET_ID')).onEdit().create();
 }
 function verify_(envelope,secret,now) {
@@ -80,8 +83,10 @@ function quota_(key,limit,seconds) {
   if(count>=limit) return false;cache.put(key,String(count+1),seconds);return true;
 }
 function enqueue_(id,eventId) {
-  const s=sheet_(CRM.outbox); if(rows_(s).some(r=>r[0]===eventId)) return;
-  s.appendRow([eventId,id,'Ожидает',0,new Date(),'','']);
+  const s=sheet_(CRM.outbox);
+  const events=eventId.startsWith('lead:')?[eventId,'email:'+eventId]:[eventId];
+  const existing=new Set(rows_(s).map(r=>r[0]));
+  for(const event of events) if(!existing.has(event)) s.appendRow([event,id,'Ожидает',0,new Date(),'','']);
 }
 function doPost(e) {
   try {
@@ -115,17 +120,26 @@ function deliverNotifications() {
   // The lock prevents concurrent workers from sending the same pending row.
   return locked_(()=>{
     const p=props_();const token=p.getProperty('TELEGRAM_BOT_TOKEN');const chat=p.getProperty('TELEGRAM_CHAT_ID');
-    if(!token||!chat) throw Error('TELEGRAM_NOT_CONFIGURED');
+    const email=p.getProperty('NOTIFICATION_EMAIL');
     const box=sheet_(CRM.outbox);const leads=rows_(sheet_(CRM.leads));const pending=rows_(box);let sent=0;
     for(let i=0;i<pending.length&&sent<10;i++) {
       const row=pending[i];if(row[2]==='Отправлено'||row[2]==='Ошибка'||new Date(row[4]).getTime()>Date.now()) continue;
       const lead=leads.find(r=>r[0]===row[1]);if(!lead) continue;
       const attempts=Number(row[3])+1;
-      const text=['Заявка Growatt',lead[0],'Имя: '+(lead[2]||'—'),'Телефон: '+(lead[3]||'—'),'Email: '+(lead[4]||'—'),'Город: '+(lead[5]||'—'),'Запрос: '+lead[6],'Источник: '+lead[8],'Когда звонить: '+(lead[19]||'—'),book_().getUrl()].join('\n').slice(0,3500);
+      const text=['Заявка Growatt',lead[0],'Имя: '+(lead[2]||'—'),'Телефон: '+(String(lead[3]||'').replace(/^'/,'')||'—'),'Email: '+(lead[4]||'—'),'Город: '+(lead[5]||'—'),'Запрос: '+lead[6],'Комментарий: '+(lead[7]||'—'),'Источник: '+lead[8],'Когда звонить: '+(lead[19]||'—'),book_().getUrl()].join('\n').slice(0,3500);
       try {
+        let messageId='';
+        if(String(row[0]).startsWith('email:')) {
+          if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw Error('EMAIL_NOT_CONFIGURED');
+          GmailApp.sendEmail(email,'Новая заявка Growatt — '+String(lead[0]),text);
+          messageId='email';
+        } else {
+        if(!token||!chat) throw Error('TELEGRAM_NOT_CONFIGURED');
         const response=UrlFetchApp.fetch('https://api.telegram.org/bot'+token+'/sendMessage',{method:'post',contentType:'application/json',payload:JSON.stringify({chat_id:chat,text,disable_web_page_preview:true}),muteHttpExceptions:true});
         const data=JSON.parse(response.getContentText());if(!data.ok) throw Error('TELEGRAM_'+response.getResponseCode());
-        box.getRange(i+2,3,1,5).setValues([['Отправлено',attempts,'',String(data.result.message_id),'']]);
+        messageId=String(data.result.message_id);
+        }
+        box.getRange(i+2,3,1,5).setValues([['Отправлено',attempts,'',messageId,'']]);
       } catch(error) {
         // Never persist the raw exception: network errors can include a token-bearing URL.
         box.getRange(i+2,3,1,5).setValues([[attempts>=6?'Ошибка':'Ожидает',attempts,new Date(Date.now()+Math.min(3600000,60000*Math.pow(2,attempts))),'','Не подтверждена доставка']]);
