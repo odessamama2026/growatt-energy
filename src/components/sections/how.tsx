@@ -24,7 +24,7 @@ export function How() {
           Як це працює
         </p>
         <h2 className="font-display mt-4 max-w-2xl text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
-          Один щит. Три режими. Жодного генератора в дворі.
+          Універсальне рішення. Три режими. Жодного генератора в дворі.
         </h2>
         <ol className="mt-12 grid gap-6 lg:grid-cols-3">
           {STEPS.map((step) => (
