@@ -8,7 +8,7 @@ import { calculateLoad } from "@/lib/calculator";
 
 export function Load() {
   const openLead = useLead((s) => s.openLead);
-  const [on, setOn] = useState<string[]>(["light", "fridge", "net"]);
+  const [on, setOn] = useState<string[]>(["light", "fridge", "net", "tv"]);
 
   const totals = useMemo(() => calculateLoad(on), [on]);
 
@@ -74,7 +74,7 @@ export function Load() {
             <Row
               label="Одночасна потужність"
               value={`${totals.watts.toLocaleString("uk-UA")} Вт`}
-              hint={totals.okPower ? "в межах 5 кВт" : "перевищує 5 кВт — зніміть бойлер або плиту"}
+              hint={totals.okPower ? "в межах 5 кВт" : "перевищує 5 кВт — вимкніть один із потужних приладів"}
               warn={!totals.okPower}
             />
             <Row
