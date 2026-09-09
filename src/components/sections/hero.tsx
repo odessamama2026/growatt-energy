@@ -15,16 +15,16 @@ export function Hero() {
             Надійна енергія у будь-яких умовах
           </p>
           <h1 className="hero-title rise-2 font-display mt-4 max-w-xl text-[2.15rem] leading-[1.05] font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem]">
-            Резервне живлення{" "}
-            <span className="text-primary">для дому в Одесі</span>
+            Встановлення інвертора{" "}
+            <span className="text-primary">в Одесі та Одеській області</span>
           </h1>
           <p className="rise-3 mt-6 max-w-md text-base leading-relaxed text-muted sm:text-lg">
-            Інвертор Growatt 5 кВт і літієва батарея 5 кВт·год. Світло, інтернет і
-            техніка працюють, коли мережа мовчить.
+            Підбір, встановлення та налаштування інвертора Growatt 5 кВт із
+            літієвою батареєю 5 кВт·год для резервного живлення будинку.
           </p>
           <div className="rise-4 mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button size="lg" onClick={() => openLead("hero")}>
-              Замовити комплект
+              Замовити встановлення
               <ArrowRight className="size-4" />
             </Button>
             <Button asChild variant="outline" size="lg" className="w-full sm:w-auto"><a href={SITE.phone ? `tel:${SITE.phone}` : "#order"} className="sm:inline-flex">
