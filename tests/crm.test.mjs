@@ -41,3 +41,31 @@ test('GAS rate limits new submissions but still accepts idempotent retries',()=>
 test('failed Telegram delivery retains lead and retries without exposing token',()=>{const {context,state}=gasRuntime();sendGas(context);state.properties.set('TELEGRAM_BOT_TOKEN','test-token');state.properties.set('TELEGRAM_CHAT_ID','test-chat');state.networkFail=true;context.deliverNotifications();assert.equal(state.tables.get('Заявки').length,2);assert.equal(state.tables.get('Уведомления')[1][2],'Ожидает');assert.ok(!JSON.stringify(state.tables.get('Уведомления')).includes('secret-bearing'));state.networkFail=false;state.tables.get('Уведомления')[1][4]=new Date(0);context.deliverNotifications();assert.equal(state.tables.get('Уведомления')[1][2],'Отправлено');context.deliverNotifications();assert.equal(state.calls,2);});
 
 test('email and Telegram delivery fail and retry independently',()=>{const {context,state}=gasRuntime();sendGas(context);state.properties.set('TELEGRAM_BOT_TOKEN','test');state.properties.set('TELEGRAM_CHAT_ID','test');state.properties.set('NOTIFICATION_EMAIL','owner@example.test');state.emailFail=true;context.deliverNotifications();assert.equal(state.calls,1);assert.equal(state.emails,0);assert.equal(state.tables.get('Уведомления')[1][2],'Отправлено');assert.equal(state.tables.get('Уведомления')[2][2],'Ожидает');state.emailFail=false;state.tables.get('Уведомления')[2][4]=new Date(0);context.deliverNotifications();assert.equal(state.emails,1);assert.equal(state.calls,1);context.deliverNotifications();assert.equal(state.emails,1);});
+
+test('UTF-8 transport preserves main-form Cyrillic fields through GAS and email queue', async () => {
+  for (const kit of ['kit5', 'solar', 'consult']) {
+    const {context,state}=gasRuntime();
+    const input={...valid,name:'Тест — не дзвонити',city:'Одеса',comment:'Потрібен розрахунок ☀️',source:'footer-section',kit};
+    const response=await handleLead(request(input),env,async (_url,options)=>{
+      // A receiver without an explicit charset may decode the UTF-8 bytes as Latin-1.
+      const contentType=new Headers(options.headers).get('content-type') || '';
+      const encoding=/charset\s*=\s*utf-8/i.test(contentType)?'utf8':'latin1';
+      const contents=Buffer.from(options.body,'utf8').toString(encoding);
+      return Response.json(JSON.parse(context.doPost({postData:{contents}}).text));
+    });
+    assert.equal(response.status,200);
+    const result=await response.json();
+    assert.equal(result.ok,true);
+    const row=state.tables.get('Заявки')[1];
+    assert.equal(row[2],input.name);
+    assert.equal(row[5],input.city);
+    assert.equal(row[6],kit);
+    assert.equal(row[7],input.comment);
+    assert.equal(row[8],'footer-section');
+    assert.equal(state.tables.get('Уведомления')[2][0],'email:lead:'+result.id);
+    state.properties.set('NOTIFICATION_EMAIL','owner@example.test');
+    context.deliverNotifications();
+    assert.equal(state.emails,1);
+  }
+});
+
