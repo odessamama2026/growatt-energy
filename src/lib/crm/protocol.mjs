@@ -29,7 +29,10 @@ export function validateLead(value) {
 }
 /** @param {any} data @param {string} secret @param {number} now */
 export function signEnvelope(data, secret, now = Date.now()) {
-  const payload = JSON.stringify(data);
+  // Sign ASCII-only JSON so transport/receiver charset defaults cannot alter it.
+  // JSON.parse restores Cyrillic, surrogate pairs and all original field values.
+  const payload = JSON.stringify(data).replace(/[\u007f-\uffff]/g, character =>
+    '\\u' + character.charCodeAt(0).toString(16).padStart(4, '0'));
   const timestamp = String(now);
   return {payload,timestamp,signature:createHmac('sha256',secret).update(timestamp + '.' + payload).digest('hex')};
 }
