@@ -24,10 +24,7 @@ export const APPLIANCES = [
   { id: "fridge", name: "Холодильник", watts: 140, hours: 24 },
   { id: "net", name: "Інтернет-обладнання", watts: 25, hours: 10 },
   { id: "tv", name: "Телевізор", watts: 95, hours: 6 },
-  { id: "boiler", name: "Бойлер", watts: 2000, hours: 2 },
-  { id: "pump", name: "Насос", watts: 550, hours: 2 },
   { id: "wash", name: "Пральна машина", watts: 900, hours: 1 },
-  { id: "heat", name: "Кондиціонер", watts: 1100, hours: 4 },
   { id: "heating-boiler", name: "Двоконтурний котел опалення", watts: 115, hours: 8 },
 ] as const;
 

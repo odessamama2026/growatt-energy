@@ -22,7 +22,7 @@ export function validateLead(value) {
   for (const key of ['utm_source','utm_medium','utm_campaign','utm_content','utm_term']) utm[key] = clean(value.utm?.[key], 120);
   let calculator = null;
   if (Array.isArray(value.calculator?.appliances)) {
-    const appliances = [...new Set(value.calculator.appliances)].filter((id) => ['light','fridge','net','tv','boiler','pump','wash','heat','heating-boiler'].includes(id));
+    const appliances = [...new Set(value.calculator.appliances)].filter((id) => ['light','fridge','net','tv','wash','heating-boiler'].includes(id));
     calculator = {appliances, note: 'Орієнтовний розрахунок користувача; потребує перевірки інженером'};
   }
   return {requestId:value.requestId, name:clean(value.name,100),phone,city:clean(value.city,100),kit,comment:clean(value.comment,2000),preferredTime:clean(value.preferredTime,100),source,utm,calculator,consent:true,consentVersion:'2026-09-07',page:clean(value.page,150).split('?')[0]};
