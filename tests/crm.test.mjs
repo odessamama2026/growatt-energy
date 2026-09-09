@@ -42,15 +42,14 @@ test('failed Telegram delivery retains lead and retries without exposing token',
 
 test('email and Telegram delivery fail and retry independently',()=>{const {context,state}=gasRuntime();sendGas(context);state.properties.set('TELEGRAM_BOT_TOKEN','test');state.properties.set('TELEGRAM_CHAT_ID','test');state.properties.set('NOTIFICATION_EMAIL','owner@example.test');state.emailFail=true;context.deliverNotifications();assert.equal(state.calls,1);assert.equal(state.emails,0);assert.equal(state.tables.get('Уведомления')[1][2],'Отправлено');assert.equal(state.tables.get('Уведомления')[2][2],'Ожидает');state.emailFail=false;state.tables.get('Уведомления')[2][4]=new Date(0);context.deliverNotifications();assert.equal(state.emails,1);assert.equal(state.calls,1);context.deliverNotifications();assert.equal(state.emails,1);});
 
-test('UTF-8 transport preserves main-form Cyrillic fields through GAS and email queue', async () => {
+test('ASCII wire format preserves main-form Cyrillic fields through GAS and email queue', async () => {
   for (const kit of ['kit5', 'solar', 'consult']) {
     const {context,state}=gasRuntime();
     const input={...valid,name:'Тест — не дзвонити',city:'Одеса',comment:'Потрібен розрахунок ☀️',source:'footer-section',kit};
     const response=await handleLead(request(input),env,async (_url,options)=>{
-      // A receiver without an explicit charset may decode the UTF-8 bytes as Latin-1.
-      const contentType=new Headers(options.headers).get('content-type') || '';
-      const encoding=/charset\s*=\s*utf-8/i.test(contentType)?'utf8':'latin1';
-      const contents=Buffer.from(options.body,'utf8').toString(encoding);
+      // Even a receiver ignoring the charset must see the identical signed bytes.
+      assert.match(options.body,/^[\x00-\x7f]*$/);
+      const contents=Buffer.from(options.body,'utf8').toString('latin1');
       return Response.json(JSON.parse(context.doPost({postData:{contents}}).text));
     });
     assert.equal(response.status,200);
@@ -69,3 +68,15 @@ test('UTF-8 transport preserves main-form Cyrillic fields through GAS and email 
   }
 });
 
+test('escaped payload preserves literal escapes and emoji without transliteration',()=>{
+  const data={text:'Одеса 😀 \\u0410 "quoted"\nnext'};
+  const envelope=signEnvelope(data,env.CRM_SHARED_SECRET);
+  assert.match(envelope.payload,/^[\x00-\x7f]*$/);
+  assert.deepEqual(JSON.parse(envelope.payload),data);
+});
+
+test('expanded Unicode payload fails clearly before exceeding GAS limits',async()=>{
+  const data={...valid,name:'я'.repeat(100),city:'я'.repeat(100),comment:'я'.repeat(2000),preferredTime:'я'.repeat(100),utm:Object.fromEntries(['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].map(k=>[k,'я'.repeat(120)]))};
+  const response=await handleLead(request(data),env,()=>{throw Error('Must not send oversized envelope');});
+  assert.equal(response.status,413);
+});
