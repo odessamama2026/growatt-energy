@@ -1,7 +1,11 @@
 const env=import.meta.env;
+const defaultSiteUrl='https://growatt-energy.vercel.app';
+const configuredUrl=(env.VITE_SITE_URL||defaultSiteUrl).replace(/\/$/,'');
+const browserOrigin=typeof window==='undefined'?'':window.location.origin;
+const isProductionOrigin=!browserOrigin||browserOrigin===configuredUrl;
 export const publicConfig={
-  url:(env.VITE_SITE_URL||'').replace(/\/$/,''),
-  live:env.VITE_SITE_LIVE==='true',
+  url:isProductionOrigin?configuredUrl:'',
+  live:env.VITE_SITE_LIVE!=='false'&&isProductionOrigin,
   gaId:/^G-[A-Z0-9]+$/.test(env.VITE_GA4_ID||'')?env.VITE_GA4_ID:'',
   verification:env.VITE_GOOGLE_SITE_VERIFICATION||'',
   businessName:env.VITE_BUSINESS_NAME||'Growatt Energy',
