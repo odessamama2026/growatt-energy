@@ -3,9 +3,9 @@ import appCss from "../styles.css?url";
 
 import { Analytics } from "@/components/analytics";
 import { seo } from "@/lib/public-config";
-const APP_NAME = "Резервне живлення для дому в Одесі | Growatt Energy";
+const APP_NAME = "Встановлення інвертора в Одесі та області | Growatt Energy";
 const APP_DESC =
-  "Підбір резервного електроживлення для дому. Інвертор Growatt 5 кВт і акумулятор 5 кВт·год під ключ в Одесі та Україні.";
+  "Встановлення інвертора Growatt в Одесі та Одеській області: підбір потужності, акумулятора, захисту й монтаж резервного живлення для дому.";
 
 export const Route = createRootRoute({
   head: () => ({

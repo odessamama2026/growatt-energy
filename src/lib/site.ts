@@ -15,7 +15,7 @@ export const NAV = [
   { href: "#kit", label: "Комплект" },
   { href: "#backup", label: "Автономія" },
   { href: "#solar", label: "Сонце" },
-  { href: "#region", label: "Одеса" },
+  { href: "#region", label: "Одеса й область" },
   { href: "#faq", label: "Питання" },
 ] as const;
 

@@ -8,8 +8,8 @@ export function Footer() {
         <div>
           <Logo inverted />
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-light">
-            Підбір обладнання Growatt. Інвертори, акумулятори та сонячні
-            системи під ключ — Одеса і вся Україна.
+            Підбір і встановлення інверторів Growatt, акумуляторів та сонячних
+            систем — Одеса й Одеська область.
           </p>
         </div>
         <div>

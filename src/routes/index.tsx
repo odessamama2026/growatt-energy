@@ -20,9 +20,35 @@ import { Lead } from "@/components/sections/lead";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: publicConfig.businessName,
+      url: publicConfig.url,
+      inLanguage: "uk",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: "Встановлення інвертора в Одесі та Одеській області",
+      serviceType: "Встановлення інверторів і систем резервного живлення",
+      areaServed: [
+        { "@type": "City", name: "Одеса" },
+        { "@type": "AdministrativeArea", name: "Одеська область" },
+      ],
+      provider: {
+        "@type": "Organization",
+        name: publicConfig.businessName,
+        url: publicConfig.url,
+      },
+      url: publicConfig.url,
+    },
+  ];
+
   return (
     <div className="min-h-svh bg-cream text-foreground">
-      {publicConfig.url ? <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({"@context":"https://schema.org","@type":"WebSite",name:publicConfig.businessName,url:publicConfig.url,inLanguage:"uk"}).replace(/</g,"\\u003c")}}/> : null}
+      {publicConfig.url ? <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(structuredData).replace(/</g,"\\u003c")}}/> : null}
       <Header />
       <main id="main" className="pb-20 md:pb-0">
         <Hero />
