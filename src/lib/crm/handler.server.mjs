@@ -18,8 +18,11 @@ export async function handleLead(request, env = process.env, send = fetch) {
     const lead = validateLead(JSON.parse(Buffer.concat(chunks).toString('utf8')));
     const ip = (request.headers.get('x-vercel-forwarded-for') || request.headers.get('x-forwarded-for') || '').split(',')[0].trim();
     const envelope = signEnvelope({...lead,rateKey:anonymousRateKey(ip,env.CRM_SHARED_SECRET)},env.CRM_SHARED_SECRET);
+    const body = JSON.stringify(envelope);
+    // Escaping Unicode expands the wire representation; respect GAS limits.
+    if (envelope.payload.length > 16000 || body.length > 20000) return reply({ok:false,error:'Заявка надто велика. Скоротіть коментар.'},413);
     // Apps Script must decode the same UTF-8 text that was signed by Node.
-    const response = await send(env.GOOGLE_CRM_WEBAPP_URL,{method:'POST',headers:{'Content-Type':'application/json; charset=utf-8'},body:JSON.stringify(envelope),redirect:'follow',signal:AbortSignal.timeout(20000)});
+    const response = await send(env.GOOGLE_CRM_WEBAPP_URL,{method:'POST',headers:{'Content-Type':'application/json; charset=utf-8'},body,redirect:'follow',signal:AbortSignal.timeout(20000)});
     if (!response.ok) throw new Error('upstream');
     const result = await response.json();
     if (result.ok && /^[a-zA-Z0-9-]{8,100}$/.test(result.id || '')) return reply({ok:true,id:result.id});
