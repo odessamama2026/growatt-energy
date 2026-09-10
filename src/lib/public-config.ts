@@ -5,7 +5,7 @@ const browserOrigin=typeof window==='undefined'?'':window.location.origin;
 const isProductionOrigin=!browserOrigin||browserOrigin===configuredUrl;
 export const publicConfig={
   url:isProductionOrigin?configuredUrl:'',
-  live:isProductionOrigin&&(configuredUrl===defaultSiteUrl||env.VITE_SITE_LIVE==='true'),
+  live:isProductionOrigin&&env.VITE_SITE_LIVE==='true',
   gaId:/^G-[A-Z0-9]+$/.test(env.VITE_GA4_ID||'')?env.VITE_GA4_ID:'',
   verification:env.VITE_GOOGLE_SITE_VERIFICATION||'',
   businessName:env.VITE_BUSINESS_NAME||'Growatt Energy',
